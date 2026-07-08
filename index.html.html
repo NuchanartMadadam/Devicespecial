@@ -582,7 +582,7 @@ async function connectAndLoad() {
     state.devices = data.devices || [];
     state.academicYears = data.academicYears || [];
     state.deviceTypes = data.deviceTypes || [];
-    state.logoUrl = (data.config && data.config.LogoUrl) || DEFAULT_LOGO_DATA_URI;
+    state.logoUrl = (data.config && data.config.LogoUrl) || '';
     setConn(true, 'เชื่อมต่อแล้ว');
     renderAll();
     return true;
@@ -598,7 +598,7 @@ async function refreshData() {
   state.devices = data.devices || [];
   state.academicYears = data.academicYears || [];
   state.deviceTypes = data.deviceTypes || [];
-  state.logoUrl = (data.config && data.config.LogoUrl) || DEFAULT_LOGO_DATA_URI;
+  state.logoUrl = (data.config && data.config.LogoUrl) || '';
   renderAll();
 }
 
@@ -620,16 +620,20 @@ function renderBrand() {
   const emoji = document.getElementById('brandEmoji');
   const imgTop = document.getElementById('brandLogoTop');
   const emojiTop = document.getElementById('brandEmojiTop');
-  const onFail = (imgEl, emojiEl) => { imgEl.style.display = 'none'; emojiEl.style.display = ''; };
-  if (state.logoUrl) {
-    img.onerror = () => onFail(img, emoji);
-    img.src = state.logoUrl; img.style.display = ''; emoji.style.display = 'none';
-    imgTop.onerror = () => onFail(imgTop, emojiTop);
-    imgTop.src = state.logoUrl; imgTop.style.display = ''; emojiTop.style.display = 'none';
-  } else {
-    img.style.display = 'none'; emoji.style.display = '';
-    imgTop.style.display = 'none'; emojiTop.style.display = '';
-  }
+  const onFail = (imgEl, emojiEl) => {
+    // if the saved (Drive-hosted) logo fails, fall back to the embedded default logo instead of just hiding it
+    if (imgEl.src !== DEFAULT_LOGO_DATA_URI) {
+      imgEl.onerror = () => { imgEl.style.display = 'none'; emojiEl.style.display = ''; };
+      imgEl.src = DEFAULT_LOGO_DATA_URI;
+    } else {
+      imgEl.style.display = 'none'; emojiEl.style.display = '';
+    }
+  };
+  const url = state.logoUrl || DEFAULT_LOGO_DATA_URI;
+  img.onerror = () => onFail(img, emoji);
+  img.src = url; img.style.display = ''; emoji.style.display = 'none';
+  imgTop.onerror = () => onFail(imgTop, emojiTop);
+  imgTop.src = url; imgTop.style.display = ''; emojiTop.style.display = 'none';
 }
 function renderAll() {
   renderBrand();
