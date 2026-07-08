@@ -968,7 +968,9 @@ function openDeviceModal(id) {
         <div class="hint">ไปที่ "ตั้งค่า > จัดการประเภทอุปกรณ์ช่วยเหลือ" หากต้องการเพิ่มรายการใหม่</div>
       </div>
       <div class="field"><label>หน่วยงานที่มอบอุปกรณ์</label><input type="text" id="d_provider" list="dl_provider" value="${d ? escapeAttr(d.Provider) : ''}">${datalistHtml('dl_provider', providerList)}</div>
-      <div class="field"><label>วัน/เดือน/ปีที่ได้รับอุปกรณ์ (พ.ศ.)</label>${thaiDatePickerHtml('d_date', d ? d.ReceivedDate : '')}</div>
+      <div class="field"><label>วัน/เดือน/ปีที่ได้รับอุปกรณ์ (พ.ศ.)</label>${thaiDatePickerHtml('d_date', d ? d.ReceivedDate : '')}
+        <div class="hint">ปีการศึกษา: <b id="d_year_display" style="color:var(--violet-dark);">${d && d.ReceivedDate ? (matchAcademicYear(d.ReceivedDate) ? matchAcademicYear(d.ReceivedDate).YearLabel : 'ไม่พบปีการศึกษาที่ตรงกัน') : '-'}</b></div>
+      </div>
       <div class="field">
         <label>รูปภาพนักเรียน (ขณะใช้อุปกรณ์)</label>
         <div class="photo-upload">
@@ -984,6 +986,13 @@ function openDeviceModal(id) {
     </div>
   </div>`;
   document.getElementById('modalRoot').innerHTML = html;
+  ['d_date_d','d_date_m','d_date_y'].forEach(elId => {
+    document.getElementById(elId).addEventListener('change', () => {
+      const iso = getThaiDateIso('d_date');
+      const ay = iso ? matchAcademicYear(iso) : null;
+      document.getElementById('d_year_display').textContent = !iso ? '-' : (ay ? ay.YearLabel : 'ไม่พบปีการศึกษาที่ตรงกัน');
+    });
+  });
   document.getElementById('d_photo').addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const prev = document.getElementById('d_photo_preview');
@@ -1043,6 +1052,7 @@ function renderAcademicYearList() {
       <b style="color:${colorFor(i)};">${escapeHtml(ay.YearLabel)}</b>
       <span>${formatThaiDate(ay.StartDate)} — ${formatThaiDate(ay.EndDate)}</span>
       <div class="spacer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="editAcademicYear('${ay.ID}')">แก้ไข</button>
       <button class="btn btn-danger-ghost btn-sm" onclick="deleteAcademicYear('${ay.ID}')">ลบ</button>
     </div>`).join('');
 }
@@ -1070,6 +1080,44 @@ async function deleteAcademicYear(id) {
   await apiPost({ action: 'deleteAcademicYear', id });
   await refreshData();
 }
+function editAcademicYear(id) {
+  if (!state.isAdmin) { openLoginModal(() => editAcademicYear(id)); return; }
+  const ay = state.academicYears.find(x => x.ID === id);
+  if (!ay) return;
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal" style="max-width:420px;">
+      <h2>✏️ แก้ไขปีการศึกษา</h2>
+      <div class="field"><label>ชื่อปีการศึกษา เช่น 2568</label><input type="text" id="edit_ay_label" value="${escapeAttr(ay.YearLabel)}"></div>
+      <div class="field"><label>วันเริ่มต้นปีการศึกษา</label><div id="edit_ay_start_wrap"></div></div>
+      <div class="field"><label>วันสิ้นสุดปีการศึกษา</label><div id="edit_ay_end_wrap"></div></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="btnSaveAcademicYear">บันทึก</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  document.getElementById('edit_ay_start_wrap').innerHTML = thaiDatePickerHtml('edit_ay_start', ay.StartDate);
+  document.getElementById('edit_ay_end_wrap').innerHTML = thaiDatePickerHtml('edit_ay_end', ay.EndDate);
+  document.getElementById('btnSaveAcademicYear').addEventListener('click', async () => {
+    const label = document.getElementById('edit_ay_label').value.trim();
+    const start = getThaiDateIso('edit_ay_start');
+    const end = getThaiDateIso('edit_ay_end');
+    if (!label || !start || !end) { alert('กรุณากรอกชื่อปีการศึกษาและวันที่ให้ครบถ้วน'); return; }
+    if (start > end) { alert('วันเริ่มต้นต้องมาก่อนวันสิ้นสุด'); return; }
+    const btn = document.getElementById('btnSaveAcademicYear');
+    btn.disabled = true;
+    try {
+      await apiPost({ action: 'updateAcademicYear', id, yearLabel: label, startDate: start, endDate: end });
+      closeModal();
+      await refreshData();
+    } catch (err) {
+      alert('บันทึกไม่สำเร็จ: ' + err.message);
+      btn.disabled = false;
+    }
+  });
+}
 
 /* ============================ SETTINGS: DEVICE TYPES ============================ */
 function renderDeviceTypeList() {
@@ -1082,6 +1130,7 @@ function renderDeviceTypeList() {
     <div class="ay-row">
       <span class="tag" style="background:${colorFor(i)};">${escapeHtml(t.TypeName)}</span>
       <div class="spacer"></div>
+      <button class="btn btn-ghost btn-sm" onclick="editDeviceType('${t.ID}')">แก้ไข</button>
       <button class="btn btn-danger-ghost btn-sm" onclick="deleteDeviceType('${t.ID}')">ลบ</button>
     </div>`).join('');
 }
@@ -1106,6 +1155,37 @@ async function deleteDeviceType(id) {
   if (!confirm('ยืนยันลบอุปกรณ์นี้ออกจากรายการ? (รายการที่เคยบันทึกไปแล้วจะไม่ถูกลบ)')) return;
   await apiPost({ action: 'deleteDeviceType', id });
   await refreshData();
+}
+function editDeviceType(id) {
+  if (!state.isAdmin) { openLoginModal(() => editDeviceType(id)); return; }
+  const t = state.deviceTypes.find(x => x.ID === id);
+  if (!t) return;
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal" style="max-width:380px;">
+      <h2>✏️ แก้ไขชื่ออุปกรณ์</h2>
+      <div class="field"><label>ชื่ออุปกรณ์ช่วยเหลือ</label><input type="text" id="edit_devicetype_name" value="${escapeAttr(t.TypeName)}"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="btnSaveDeviceType">บันทึก</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  document.getElementById('btnSaveDeviceType').addEventListener('click', async () => {
+    const name = document.getElementById('edit_devicetype_name').value.trim();
+    if (!name) { alert('กรุณากรอกชื่ออุปกรณ์'); return; }
+    const btn = document.getElementById('btnSaveDeviceType');
+    btn.disabled = true;
+    try {
+      await apiPost({ action: 'updateDeviceType', id, typeName: name });
+      closeModal();
+      await refreshData();
+    } catch (err) {
+      alert('บันทึกไม่สำเร็จ: ' + err.message);
+      btn.disabled = false;
+    }
+  });
 }
 
 /* ============================ STATS TAB ============================ */
