@@ -246,17 +246,22 @@
           <input type="text" id="newRoomName" placeholder="ชื่อห้องเตรียมความพร้อมใหม่ เช่น ห้องเตรียม 1">
           <button class="btn btn-tangerine" id="btnAddRoom">+ เพิ่มห้อง</button>
         </div>
-        <div id="roomCardsWrap" class="grid grid-3"></div>
+        <div class="field" style="max-width:420px; margin-top:14px; margin-bottom:0;">
+          <label>เลือกห้องเพื่อดูรายละเอียด</label>
+          <select id="roomSelect"><option value="">-- เลือกห้อง --</option></select>
+        </div>
       </div>
 
       <div class="card" id="roomDetailCard" style="display:none;">
         <div class="toolbar">
           <h2 id="roomDetailTitle" style="margin:0; color:var(--violet-dark);"></h2>
+          <button class="btn btn-ghost btn-sm" id="btnEditRoomName">✏️ แก้ไขชื่อห้อง</button>
           <div class="spacer"></div>
           <select id="roomYearFilter" style="min-width:170px;"><option value="">ทุกปีการศึกษา</option></select>
           <button class="btn btn-violet btn-sm" id="btnAddDevice">+ บันทึกอุปกรณ์ที่ได้รับ</button>
           <button class="btn btn-danger-ghost btn-sm" id="btnDeleteRoom">ลบห้องนี้</button>
         </div>
+        <div id="roomStatsLine" class="hint" style="margin-bottom:12px;"></div>
         <div id="deviceTableWrap"></div>
       </div>
     </div>
@@ -395,7 +400,7 @@ let charts = {};
 
 /* ค่าเริ่มต้น: ลิงก์ Google Apps Script Web App ของระบบนี้ — ฝังไว้ให้เชื่อมต่อทันทีโดยไม่ต้องตั้งค่าเอง
    (แอดมินยังเปลี่ยนได้ทีหลังที่แท็บ "ตั้งค่า" ถ้าต้องการย้ายไปใช้ Google Sheet ชุดอื่น) */
-const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxr64gkQEcBIr1y5hQNwUg5v_SQUeDtyy5khg9Gi8nYCYagCAkYTz0FE8ppORYiGQa8/exec';
+const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxDsKrG8LZOYomeJqi7M9xF8W0RxztaSjUiu3dZN06Os1YtL5333KWJfGiMe596NWYy/exec';
 
 /* ============================ STORAGE (persistent artifact storage, NOT localStorage) ============================ */
 async function loadSavedUrl() {
@@ -626,7 +631,7 @@ function renderAll() {
   populateRoomFilter();
   populateYearFilters();
   renderStudentsTable();
-  renderRoomCards();
+  populateRoomSelect();
   renderRoomDetail();
   renderAcademicYearList();
   renderDeviceTypeList();
@@ -779,26 +784,56 @@ async function deleteStudent(id) {
 function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
 
 /* ============================ ROOMS TAB ============================ */
-function renderRoomCards() {
-  const wrap = document.getElementById('roomCardsWrap');
+function populateRoomSelect() {
+  const sel = document.getElementById('roomSelect');
+  const current = sel.value;
   if (state.rooms.length === 0) {
-    wrap.innerHTML = `<div class="empty" style="grid-column:1/-1;"><div class="emoji">🏫</div><h3>ยังไม่มีห้องเตรียมความพร้อม</h3><p>เพิ่มห้องแรกได้จากช่องด้านบน</p></div>`;
-    return;
+    sel.innerHTML = '<option value="">-- ยังไม่มีห้อง เพิ่มห้องแรกด้านบน --</option>';
+  } else {
+    sel.innerHTML = '<option value="">-- เลือกห้อง --</option>' + state.rooms.slice().sort((a,b)=> (a.RoomName>b.RoomName?1:-1)).map(r => {
+      const studentCount = state.students.filter(s => s.RoomID === r.ID).length;
+      const deviceCount = state.devices.filter(d => { const st = state.students.find(s => s.ID === d.StudentID); return st && st.RoomID === r.ID; }).length;
+      return `<option value="${r.ID}">${escapeHtml(r.RoomName)} (${studentCount} นักเรียน, ${deviceCount} อุปกรณ์)</option>`;
+    }).join('');
   }
-  wrap.innerHTML = state.rooms.map((r,i) => {
-    const studentCount = state.students.filter(s => s.RoomID === r.ID).length;
-    const deviceCount = state.devices.filter(d => { const st = state.students.find(s => s.ID === d.StudentID); return st && st.RoomID === r.ID; }).length;
-    return `<div class="room-card ${state.selectedRoomId === r.ID ? 'selected' : ''}" style="border-top-color:${colorFor(i)};" onclick="selectRoom('${r.ID}')">
-      <div class="rname">${escapeHtml(r.RoomName)}</div>
-      <div class="room-stats">
-        <div><b style="color:${colorFor(i)};">${studentCount}</b>นักเรียน</div>
-        <div><b style="color:${colorFor(i)};">${deviceCount}</b>รายการอุปกรณ์</div>
-      </div>
-    </div>`;
-  }).join('');
+  sel.value = (current && state.rooms.some(r => r.ID === current)) ? current : (state.selectedRoomId || '');
 }
-function selectRoom(id) { state.selectedRoomId = id; renderRoomCards(); renderRoomDetail(); }
+document.getElementById('roomSelect').addEventListener('change', (e) => {
+  state.selectedRoomId = e.target.value || null;
+  renderRoomDetail();
+});
 document.getElementById('roomYearFilter') && document.getElementById('roomYearFilter').addEventListener('change', renderRoomDetail);
+document.getElementById('btnEditRoomName').addEventListener('click', () => {
+  if (!state.isAdmin) { openLoginModal(); return; }
+  const room = state.rooms.find(r => r.ID === state.selectedRoomId);
+  if (!room) return;
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal" style="max-width:380px;">
+      <h2>✏️ แก้ไขชื่อห้อง</h2>
+      <div class="field"><label>ชื่อห้องเตรียมความพร้อม</label><input type="text" id="edit_room_name" value="${escapeAttr(room.RoomName)}"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="btnSaveRoomName">บันทึก</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  document.getElementById('btnSaveRoomName').addEventListener('click', async () => {
+    const name = document.getElementById('edit_room_name').value.trim();
+    if (!name) { alert('กรุณากรอกชื่อห้อง'); return; }
+    const btn = document.getElementById('btnSaveRoomName');
+    btn.disabled = true;
+    try {
+      await apiPost({ action: 'updateRoom', id: room.ID, name });
+      closeModal();
+      await refreshData();
+    } catch (err) {
+      alert('บันทึกไม่สำเร็จ: ' + err.message);
+      btn.disabled = false;
+    }
+  });
+});
 
 function renderRoomDetail() {
   const card = document.getElementById('roomDetailCard');
@@ -810,6 +845,8 @@ function renderRoomDetail() {
 
   const roomStudents = state.students.filter(s => s.RoomID === room.ID);
   const roomStudentIds = new Set(roomStudents.map(s => s.ID));
+  document.getElementById('roomStatsLine').innerHTML = `👥 นักเรียนในห้องนี้: <b>${roomStudents.length}</b> คน &nbsp;|&nbsp; 🦽 รายการอุปกรณ์ทั้งหมด: <b>${state.devices.filter(d => roomStudentIds.has(d.StudentID)).length}</b> รายการ`;
+
   const yearFilter = document.getElementById('roomYearFilter').value;
   let records = state.devices.filter(d => roomStudentIds.has(d.StudentID));
   if (yearFilter) {
