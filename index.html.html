@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบบันทึกข้อมูลอุปกรณ์ช่วยเหลือนักเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#233420;
+    --bg:#F7FBF3;
+    --bg-2:#E9F5E1;
+    --white:#FFFFFF;
+    --line:#D3EBC4;
+
+    --violet:#2E9E44;
+    --violet-dark:#1F7A33;
+    --sky:#9C27B0;
+    --coral:#FF5252;
+    --tangerine:#FF7A29;
+    --gold:#FFC93C;
+    --pink:#FF4D6D;
+    --mint:#00B884;
+
+    --shadow: 0 4px 16px rgba(31,122,51,0.14);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'IBM Plex Sans Thai',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  h1,h2,h3,.display{ font-family:'Baloo 2',sans-serif; font-weight:700; }
+
+  .app{ display:flex; min-height:100vh; }
+
+  /* Sidebar */
+  .sidebar{
+    width:240px;
+    flex-shrink:0;
+    background:linear-gradient(160deg, var(--violet) 0%, var(--violet-dark) 55%, #123D1E 100%);
+    color:var(--white);
+    padding:26px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .brand{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:18px;
+    line-height:1.4;
+    margin-bottom:28px;
+    padding:0 6px 14px 6px;
+    border-bottom:2px dashed rgba(255,255,255,0.25);
+  }
+  .brand small{ display:block; font-weight:400; font-size:12px; opacity:0.8; margin-top:3px; font-family:'IBM Plex Sans Thai'; }
+  .nav-btn{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px; border-radius:12px;
+    color:rgba(255,255,255,0.82); background:transparent; border:none; cursor:pointer;
+    font-size:14.5px; font-family:inherit; text-align:left; transition:background .15s, transform .1s;
+  }
+  .nav-btn:hover{ background:rgba(255,255,255,0.12); }
+  .nav-btn.active{ background:var(--white); color:var(--violet-dark); font-weight:700; box-shadow:var(--shadow); }
+  .nav-emoji{ font-size:16px; }
+  .sidebar-footer{ margin-top:auto; }
+  .conn-pill{ font-size:11.5px; padding:7px 11px; border-radius:20px; display:inline-flex; align-items:center; gap:7px; font-weight:600; }
+  .conn-dot{ width:8px; height:8px; border-radius:50%; }
+  .conn-ok{ background:rgba(32,201,151,0.25); color:#baf5df; }
+  .conn-ok .conn-dot{ background:var(--mint); box-shadow:0 0 8px var(--mint); }
+  .conn-off{ background:rgba(255,111,107,0.22); color:#ffd2cf; }
+  .conn-off .conn-dot{ background:var(--coral); }
+  .admin-badge{ font-size:11.5px; padding:7px 11px; border-radius:20px; background:rgba(76,175,80,0.22); color:#c9f5cb; display:flex; align-items:center; justify-content:space-between; gap:6px; font-weight:600; }
+  .admin-login-btn{ width:100%; font-size:12.5px; padding:8px 11px; border-radius:20px; background:rgba(255,255,255,0.14); color:#fff; border:none; cursor:pointer; font-family:inherit; font-weight:600; text-align:left; }
+  .admin-login-btn:hover{ background:rgba(255,255,255,0.22); }
+  .admin-logout-btn{ background:transparent; border:none; color:#c9f5cb; cursor:pointer; font-size:12px; text-decoration:underline; font-family:inherit; }
+
+  /* Main */
+  .main{ flex:1; padding:32px 40px; max-width:1240px; }
+  .page-head{ margin-bottom:24px; }
+  .page-head h1{ font-size:26px; margin:0 0 4px 0; color:var(--violet-dark); }
+  .page-head p{ margin:0; color:#6b6690; font-size:14px; }
+
+  .card{ background:var(--white); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .grid{ display:grid; gap:16px; }
+  .grid-2{ grid-template-columns:1fr 1fr; }
+  .grid-3{ grid-template-columns:repeat(3,1fr); }
+  .grid-4{ grid-template-columns:repeat(4,1fr); }
+  @media(max-width:900px){ .grid-2,.grid-3,.grid-4{ grid-template-columns:1fr; } }
+
+  .btn{ font-family:inherit; font-size:14px; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; font-weight:700; display:inline-flex; align-items:center; gap:6px; transition:transform .08s, filter .12s; }
+  .btn:active{ transform:scale(0.97); }
+  .btn-violet{ background:var(--violet); color:var(--white); }
+  .btn-violet:hover{ filter:brightness(1.08); }
+  .btn-coral{ background:var(--coral); color:var(--white); }
+  .btn-coral:hover{ filter:brightness(1.08); }
+  .btn-tangerine{ background:var(--tangerine); color:var(--white); }
+  .btn-tangerine:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background:var(--bg-2); color:var(--violet-dark); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:#e7deff; }
+  .btn-danger-ghost{ background:#FFF0EF; color:#D9463C; border:1px solid #FFD4D0; }
+  .btn-danger-ghost:hover{ background:#ffe1de; }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .btn-sm{ padding:7px 11px; font-size:12.5px; border-radius:8px; }
+
+  label{ font-size:12.5px; font-weight:700; color:#6b6690; display:block; margin-bottom:5px; }
+  input[type=text], input[type=tel], input[type=number], select, textarea{
+    width:100%; font-family:inherit; font-size:14px; padding:10px 12px;
+    border-radius:10px; border:1.5px solid var(--line); background:var(--white); color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--violet); box-shadow:0 0 0 3px rgba(124,92,252,0.18); }
+  .field{ margin-bottom:14px; }
+  textarea{ resize:vertical; min-height:70px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th{ text-align:left; padding:11px 8px; color:#6b6690; font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:0.04em; border-bottom:2px solid var(--bg-2); }
+  td{ padding:11px 8px; border-bottom:1px solid var(--bg-2); vertical-align:middle; }
+  tr:hover td{ background:var(--bg); }
+  .avatar{ width:42px; height:42px; border-radius:10px; object-fit:cover; background:var(--bg-2); }
+  .avatar-ph{ width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--white); font-weight:700; font-size:15px; }
+
+  .tag{ display:inline-block; padding:4px 11px; border-radius:20px; font-size:12px; font-weight:700; color:var(--white); }
+  .toolbar{ display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .toolbar input, .toolbar select{ width:auto; min-width:160px; }
+  .spacer{ flex:1; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(44,42,74,0.5); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .modal{ background:var(--white); border-radius:20px; padding:28px; width:100%; max-width:540px; max-height:88vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.3); }
+  .modal h2{ margin:0 0 18px 0; font-size:20px; color:var(--violet-dark); }
+  .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+
+  .room-card{ border:1px solid var(--line); border-top:5px solid var(--violet); border-radius:14px; padding:16px; background:var(--white); cursor:pointer; transition:transform .12s, box-shadow .12s; }
+  .room-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow); }
+  .room-card.selected{ box-shadow:0 0 0 2.5px var(--violet-dark); }
+  .room-card .rname{ font-weight:700; font-size:16px; margin-bottom:8px; font-family:'Baloo 2'; }
+  .room-stats{ display:flex; gap:16px; font-size:12.5px; color:#6b6690; }
+  .room-stats b{ color:var(--ink); font-size:17px; display:block; font-family:'Baloo 2'; }
+
+  .stat-card{ text-align:left; border-top:5px solid var(--violet); }
+  .stat-card .num{ font-family:'Baloo 2'; font-size:32px; font-weight:800; line-height:1; }
+  .stat-card .label{ font-size:12.5px; color:#6b6690; margin-top:6px; font-weight:600; }
+
+  .empty{ text-align:center; padding:44px 20px; color:#9b96bd; }
+  .empty .emoji{ font-size:34px; }
+  .empty h3{ color:var(--ink); margin:10px 0 6px; font-size:16px; font-family:'Baloo 2'; }
+
+  .photo-upload{ display:flex; align-items:center; gap:12px; }
+  .photo-preview{ width:64px; height:64px; border-radius:12px; object-fit:cover; background:var(--bg-2); border:1px solid var(--line); }
+  .hint{ font-size:11.5px; color:#9b96bd; margin-top:4px; }
+
+  .thai-date-row{ display:flex; gap:8px; }
+  .thai-date-row select{ flex:1; }
+
+  .ay-row{ display:flex; align-items:center; gap:10px; padding:9px 4px; border-bottom:1px solid var(--bg-2); font-size:13.5px; }
+  .ay-row b{ font-family:'Baloo 2'; color:var(--violet-dark); min-width:70px; }
+
+  ::-webkit-scrollbar{ width:9px; } ::-webkit-scrollbar-thumb{ background:var(--bg-2); border-radius:6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <img id="brandLogo" src="" alt="โลโก้" style="display:none; width:40px; height:40px; object-fit:contain; border-radius:9px; background:#fff; padding:3px; margin-bottom:8px;">
+      <span id="brandEmoji">🧩</span> ระบบอุปกรณ์ช่วยเหลือ<small>สำหรับนักเรียนห้องเตรียมความพร้อม</small>
+    </div>
+    <button class="nav-btn" data-tab="students"><span class="nav-emoji">🧑‍🎓</span> ข้อมูลนักเรียน</button>
+    <button class="nav-btn" data-tab="rooms"><span class="nav-emoji">🏫</span> ห้องเตรียมความพร้อม</button>
+    <button class="nav-btn active" data-tab="stats"><span class="nav-emoji">📊</span> สถิติ</button>
+    <button class="nav-btn" id="navSettings" data-tab="settings"><span class="nav-emoji">⚙️</span> ตั้งค่า</button>
+    <div class="sidebar-footer">
+      <div id="adminBox" style="margin-bottom:10px;"></div>
+      <div id="connPill" class="conn-pill conn-off"><span class="conn-dot"></span> ยังไม่เชื่อมต่อ</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- STUDENTS TAB -->
+    <div id="tab-students" class="tab-panel" style="display:none;">
+      <div class="page-head">
+        <h1>ข้อมูลนักเรียน 🧑‍🎓</h1>
+        <p>ทะเบียนนักเรียนทั้งหมด พร้อมข้อมูลติดต่อและห้องเตรียมความพร้อม</p>
+      </div>
+      <div class="card">
+        <div class="toolbar">
+          <input type="text" id="studentSearch" placeholder="🔍 ค้นหาชื่อนักเรียน...">
+          <select id="studentRoomFilter"><option value="">ทุกห้อง</option></select>
+          <div class="spacer"></div>
+          <button class="btn btn-violet" id="btnAddStudent">+ เพิ่มนักเรียน</button>
+        </div>
+        <div id="studentsTableWrap"></div>
+      </div>
+    </div>
+
+    <!-- ROOMS TAB -->
+    <div id="tab-rooms" class="tab-panel" style="display:none;">
+      <div class="page-head">
+        <h1>ห้องเตรียมความพร้อม 🏫</h1>
+        <p>จัดการรายชื่อห้อง และบันทึกอุปกรณ์ช่วยเหลือที่นักเรียนแต่ละคนได้รับ</p>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="toolbar">
+          <input type="text" id="newRoomName" placeholder="ชื่อห้องเตรียมความพร้อมใหม่ เช่น ห้องเตรียม 1">
+          <button class="btn btn-tangerine" id="btnAddRoom">+ เพิ่มห้อง</button>
+        </div>
+        <div id="roomCardsWrap" class="grid grid-3"></div>
+      </div>
+
+      <div class="card" id="roomDetailCard" style="display:none;">
+        <div class="toolbar">
+          <h2 id="roomDetailTitle" style="margin:0; color:var(--violet-dark);"></h2>
+          <div class="spacer"></div>
+          <select id="roomYearFilter" style="min-width:170px;"><option value="">ทุกปีการศึกษา</option></select>
+          <button class="btn btn-violet btn-sm" id="btnAddDevice">+ บันทึกอุปกรณ์ที่ได้รับ</button>
+          <button class="btn btn-danger-ghost btn-sm" id="btnDeleteRoom">ลบห้องนี้</button>
+        </div>
+        <div id="deviceTableWrap"></div>
+      </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" class="tab-panel">
+      <div class="page-head">
+        <h1>สถิติ 📊</h1>
+        <p>ภาพรวมการได้รับอุปกรณ์ช่วยเหลือของนักเรียนทั้งหมด</p>
+      </div>
+      <div class="toolbar">
+        <label style="margin:0;">ดูข้อมูลของปีการศึกษา:</label>
+        <select id="statsYearFilter"><option value="">ทุกปีการศึกษา</option></select>
+      </div>
+      <div class="grid grid-4" style="margin:14px 0 18px;">
+        <div class="card stat-card" style="border-color:var(--violet);"><div class="num" style="color:var(--violet);" id="statTotalStudents">0</div><div class="label">นักเรียนทั้งหมด</div></div>
+        <div class="card stat-card" style="border-color:var(--sky);"><div class="num" style="color:var(--sky);" id="statTotalRooms">0</div><div class="label">ห้องเตรียมความพร้อม</div></div>
+        <div class="card stat-card" style="border-color:var(--coral);"><div class="num" style="color:var(--coral);" id="statTotalDevices">0</div><div class="label">อุปกรณ์ที่มอบให้แล้ว</div></div>
+        <div class="card stat-card" style="border-color:var(--gold);"><div class="num" style="color:#C99400;" id="statTotalYears">0</div><div class="label">ปีการศึกษาที่มีข้อมูล</div></div>
+      </div>
+      <div class="grid grid-2">
+        <div class="card"><h3 style="margin-top:0; color:var(--violet-dark);">อุปกรณ์แยกตามประเภท</h3><canvas id="chartDeviceType" height="220"></canvas></div>
+        <div class="card"><h3 style="margin-top:0; color:var(--violet-dark);">การได้รับอุปกรณ์แยกตามปีการศึกษา</h3><canvas id="chartByYear" height="220"></canvas></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3 style="margin-top:0; color:var(--violet-dark);">การได้รับอุปกรณ์แยกตามห้องเตรียมความพร้อม</h3>
+        <canvas id="chartByRoom" height="140"></canvas>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-panel" style="display:none;">
+      <div class="page-head">
+        <h1>ตั้งค่า ⚙️</h1>
+        <p>เชื่อมต่อแอปนี้กับ Google Sheet และจัดการปีการศึกษา</p>
+      </div>
+      <div class="card" style="max-width:640px; margin-bottom:18px;">
+        <h2 style="margin-top:0; font-size:17px; color:var(--violet-dark);">🖼️ โลโก้ระบบ</h2>
+        <p class="hint" style="margin-bottom:14px;">อัปโหลดโลโก้โรงเรียนหรือหน่วยงาน จะแสดงที่แถบเมนูด้านซ้ายให้ทุกคนเห็น</p>
+        <div class="photo-upload">
+          <img class="photo-preview" id="logo_preview" src="" style="display:none;">
+          <input type="file" accept="image/*" id="logo_file">
+          <button class="btn btn-violet btn-sm" id="btnUploadLogo">อัปโหลดโลโก้</button>
+        </div>
+        <div id="logoStatus" class="hint"></div>
+      </div>
+
+      <div class="card grid-2" style="display:grid; max-width:640px; margin-bottom:18px;">
+        <div class="field" style="grid-column:1/-1;">
+          <label>Google Apps Script Web App URL</label>
+          <input type="text" id="webAppUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+          <div class="hint">ดูวิธีตั้งค่าใน SETUP.md ที่แนบมาพร้อมไฟล์นี้ — วางลิงก์ที่ลงท้ายด้วย /exec</div>
+        </div>
+        <div style="grid-column:1/-1; display:flex; gap:10px;">
+          <button class="btn btn-violet" id="btnSaveUrl">บันทึกและเชื่อมต่อ</button>
+          <button class="btn btn-ghost" id="btnRetest">ทดสอบการเชื่อมต่ออีกครั้ง</button>
+        </div>
+        <div style="grid-column:1/-1;" id="settingsStatus"></div>
+      </div>
+
+      <div class="card" style="max-width:640px;">
+        <h2 style="margin-top:0; font-size:17px; color:var(--violet-dark);">🗓️ จัดการปีการศึกษา</h2>
+        <p class="hint" style="margin-bottom:14px;">กำหนดช่วงวันเริ่ม–สิ้นสุดของแต่ละปีการศึกษา (พ.ศ.) ระบบจะใช้ช่วงนี้ในการจัดกลุ่มข้อมูลอุปกรณ์ที่นักเรียนได้รับโดยอัตโนมัติ</p>
+        <div class="field"><label>ชื่อปีการศึกษา เช่น 2568</label><input type="text" id="ay_label" placeholder="2568"></div>
+        <div class="grid grid-2">
+          <div class="field"><label>วันเริ่มต้นปีการศึกษา</label><div id="ay_start_wrap"></div></div>
+          <div class="field"><label>วันสิ้นสุดปีการศึกษา</label><div id="ay_end_wrap"></div></div>
+        </div>
+        <button class="btn btn-coral" id="btnAddAcademicYear">+ เพิ่มปีการศึกษา</button>
+        <div id="academicYearList" style="margin-top:14px;"></div>
+      </div>
+
+      <div class="card" style="max-width:640px; margin-top:18px;">
+        <h2 style="margin-top:0; font-size:17px; color:var(--violet-dark);">🦽 จัดการประเภทอุปกรณ์ช่วยเหลือ</h2>
+        <p class="hint" style="margin-bottom:14px;">กำหนดรายการอุปกรณ์ช่วยเหลือที่ระบบรองรับ ครูผู้สอนจะเลือกได้จากรายการนี้เท่านั้นตอนบันทึกข้อมูลอุปกรณ์ในหัวข้อ "ห้องเตรียมความพร้อม"</p>
+        <div class="toolbar" style="margin-bottom:0;">
+          <input type="text" id="newDeviceTypeName" placeholder="ชื่ออุปกรณ์ใหม่ เช่น รถเข็นวีลแชร์">
+          <button class="btn btn-tangerine" id="btnAddDeviceType">+ เพิ่มอุปกรณ์</button>
+        </div>
+        <div id="deviceTypeList" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ============================ CONSTANTS ============================ */
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const PALETTE = ['#2E9E44','#FF7A29','#FFC93C','#9C27B0','#FF4D6D','#00B884','#F4511E','#7CB342'];
+function colorFor(i){ return PALETTE[i % PALETTE.length]; }
+const DISABILITY_TYPES = [
+  'บกพร่องทางการเห็น',
+  'บกพร่องทางการได้ยิน',
+  'บกพร่องทางสติปัญญา',
+  'บกพร่องทางร่างกายหรือการเคลื่อนไหวหรือสุขภาพ',
+  'บกพร่องทางการเรียนรู้',
+  'บกพร่องทางการพูดและภาษา',
+  'บกพร่องทางพฤติกรรมหรืออารมณ์',
+  'ออทิสติก',
+  'พิการซ้อน',
+  'อื่นๆ'
+];
+function calcAge(birthIso) {
+  if (!birthIso) return '-';
+  const bd = new Date(birthIso + 'T00:00:00');
+  if (isNaN(bd.getTime())) return '-';
+  const now = new Date();
+  let years = now.getFullYear() - bd.getFullYear();
+  let months = now.getMonth() - bd.getMonth();
+  if (now.getDate() < bd.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) return '-';
+  return `${years} ปี ${months} เดือน`;
+}
+
+/* ============================ STATE ============================ */
+const state = {
+  webAppUrl: '',
+  rooms: [],
+  students: [],
+  devices: [],
+  academicYears: [],
+  deviceTypes: [],
+  selectedRoomId: null,
+  connected: false,
+  isAdmin: false,
+  logoUrl: ''
+};
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = '123456';
+let charts = {};
+
+/* ============================ STORAGE (persistent artifact storage, NOT localStorage) ============================ */
+async function loadSavedUrl() {
+  try {
+    if (window.storage && typeof window.storage.get === 'function') {
+      const res = await window.storage.get('gas-webapp-url');
+      if (res && res.value) state.webAppUrl = res.value;
+    } else if (window.localStorage) {
+      const v = localStorage.getItem('gas-webapp-url');
+      if (v) state.webAppUrl = v;
+    }
+  } catch (e) { /* not set yet, or storage unavailable */ }
+}
+async function saveUrl(url) {
+  try {
+    if (window.storage && typeof window.storage.set === 'function') {
+      await window.storage.set('gas-webapp-url', url);
+    } else if (window.localStorage) {
+      localStorage.setItem('gas-webapp-url', url);
+    }
+  } catch (e) { /* saving settings failed, app still works for this session */ }
+}
+
+/* ============================ API ============================ */
+async function apiGet(action) {
+  const res = await fetch(state.webAppUrl + '?action=' + encodeURIComponent(action));
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'unknown error');
+  return data;
+}
+async function apiPost(payload) {
+  payload.secret = ADMIN_PASSWORD;
+  const res = await fetch(state.webAppUrl, { method: 'POST', body: JSON.stringify(payload) });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'unknown error');
+  return data.data;
+}
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ============================ THAI B.E. DATE PICKER ============================ */
+function thaiDatePickerHtml(prefix, isoDate) {
+  let d = null, m = null, yBE = null;
+  if (isoDate) {
+    const dt = new Date(isoDate + 'T00:00:00');
+    d = dt.getDate(); m = dt.getMonth(); yBE = dt.getFullYear() + 543;
+  }
+  const nowBE = new Date().getFullYear() + 543;
+  const days = Array.from({length:31}, (_,i)=>i+1);
+  const years = Array.from({length:26}, (_,i)=> nowBE + 3 - i);
+  return `<div class="thai-date-row">
+    <select id="${prefix}_d"><option value="">วัน</option>${days.map(x=>`<option value="${x}" ${d===x?'selected':''}>${x}</option>`).join('')}</select>
+    <select id="${prefix}_m"><option value="">เดือน</option>${THAI_MONTHS.map((name,i)=>`<option value="${i}" ${m===i?'selected':''}>${name}</option>`).join('')}</select>
+    <select id="${prefix}_y"><option value="">ปี พ.ศ.</option>${years.map(x=>`<option value="${x}" ${yBE===x?'selected':''}>${x}</option>`).join('')}</select>
+  </div>`;
+}
+function getThaiDateIso(prefix) {
+  const dEl = document.getElementById(prefix+'_d'), mEl = document.getElementById(prefix+'_m'), yEl = document.getElementById(prefix+'_y');
+  if (!dEl.value || !mEl.value || !yEl.value) return '';
+  const d = parseInt(dEl.value), m = parseInt(mEl.value), yBE = parseInt(yEl.value);
+  const yCE = yBE - 543;
+  const mm = String(m+1).padStart(2,'0'), dd = String(d).padStart(2,'0');
+  return `${yCE}-${mm}-${dd}`;
+}
+function formatThaiDate(iso) {
+  if (!iso) return '-';
+  const dt = new Date(iso + 'T00:00:00');
+  if (isNaN(dt.getTime())) return '-';
+  return dt.getDate() + ' ' + THAI_MONTHS[dt.getMonth()] + ' ' + (dt.getFullYear() + 543);
+}
+function matchAcademicYear(iso) {
+  if (!iso) return null;
+  for (const ay of state.academicYears) {
+    if (ay.StartDate && ay.EndDate && iso >= ay.StartDate && iso <= ay.EndDate) return ay;
+  }
+  return null;
+}
+
+/* ============================ ADMIN LOGIN ============================ */
+function renderAdminBox() {
+  const box = document.getElementById('adminBox');
+  if (state.isAdmin) {
+    box.innerHTML = `<div class="admin-badge"><span>👤 แอดมิน (${escapeHtml(ADMIN_USERNAME)})</span><button class="admin-logout-btn" id="btnLogout">ออกจากระบบ</button></div>`;
+    document.getElementById('btnLogout').addEventListener('click', logout);
+  } else {
+    box.innerHTML = `<button class="admin-login-btn" id="btnLoginOpen">🔒 เข้าสู่ระบบแอดมิน</button>`;
+    document.getElementById('btnLoginOpen').addEventListener('click', openLoginModal);
+  }
+}
+function openLoginModal(onSuccess) {
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal" style="max-width:360px;">
+      <h2>🔒 เข้าสู่ระบบแอดมิน</h2>
+      <div class="field"><label>ชื่อผู้ใช้</label><input type="text" id="login_user" autocomplete="username"></div>
+      <div class="field"><label>รหัสผ่าน</label><input type="text" id="login_pass" autocomplete="current-password"></div>
+      <div id="login_error" style="color:#D9463C; font-size:12.5px; margin-bottom:8px;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="btnLoginSubmit">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  const submit = () => {
+    const u = document.getElementById('login_user').value.trim();
+    const p = document.getElementById('login_pass').value;
+    if (u === ADMIN_USERNAME && p === ADMIN_PASSWORD) {
+      state.isAdmin = true;
+      closeModal();
+      renderAdminBox();
+      renderAll();
+      if (onSuccess) onSuccess();
+    } else {
+      document.getElementById('login_error').textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    }
+  };
+  document.getElementById('btnLoginSubmit').addEventListener('click', submit);
+  document.getElementById('login_pass').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+}
+function logout() {
+  state.isAdmin = false;
+  renderAdminBox();
+  renderAll();
+  // students/rooms/settings all require admin — kick back to the public stats view
+  const currentTab = document.querySelector('.nav-btn[data-tab].active');
+  if (currentTab && currentTab.dataset.tab !== 'stats') {
+    document.querySelector('.nav-btn[data-tab="stats"]').click();
+  }
+}
+function guardAdmin(fn) {
+  return function(...args) {
+    if (!state.isAdmin) { openLoginModal(() => fn(...args)); return; }
+    fn(...args);
+  };
+}
+
+function setConn(ok, msg) {
+  state.connected = ok;
+  const pill = document.getElementById('connPill');
+  pill.className = 'conn-pill ' + (ok ? 'conn-ok' : 'conn-off');
+  pill.innerHTML = '<span class="conn-dot"></span> ' + (msg || (ok ? 'เชื่อมต่อแล้ว' : 'ยังไม่เชื่อมต่อ'));
+}
+async function connectAndLoad() {
+  if (!state.webAppUrl) { setConn(false, 'ยังไม่เชื่อมต่อ'); return false; }
+  setConn(false, 'กำลังเชื่อมต่อ...');
+  try {
+    const data = await apiGet('init');
+    state.rooms = data.rooms || [];
+    state.students = data.students || [];
+    state.devices = data.devices || [];
+    state.academicYears = data.academicYears || [];
+    state.deviceTypes = data.deviceTypes || [];
+    state.logoUrl = (data.config && data.config.LogoUrl) || '';
+    setConn(true, 'เชื่อมต่อแล้ว');
+    renderAll();
+    return true;
+  } catch (e) {
+    setConn(false, 'เชื่อมต่อไม่สำเร็จ');
+    return false;
+  }
+}
+async function refreshData() {
+  const data = await apiGet('init');
+  state.rooms = data.rooms || [];
+  state.students = data.students || [];
+  state.devices = data.devices || [];
+  state.academicYears = data.academicYears || [];
+  state.deviceTypes = data.deviceTypes || [];
+  state.logoUrl = (data.config && data.config.LogoUrl) || '';
+  renderAll();
+}
+
+/* ============================ RENDER: SHARED ============================ */
+function roomName(id) { const r = state.rooms.find(x => x.ID === id); return r ? r.RoomName : '—'; }
+function studentName(id) { const s = state.students.find(x => x.ID === id); return s ? s.Name : '—'; }
+function initials(name) { return (name || '?').trim().charAt(0).toUpperCase(); }
+function uniqueValues(list, key) {
+  const set = new Set();
+  list.forEach(item => { const v = (item[key] || '').trim(); if (v) set.add(v); });
+  return Array.from(set);
+}
+function datalistHtml(id, values) {
+  return `<datalist id="${id}">${values.map(v => `<option value="${escapeAttr(v)}">`).join('')}</datalist>`;
+}
+
+function renderBrand() {
+  const img = document.getElementById('brandLogo');
+  const emoji = document.getElementById('brandEmoji');
+  if (state.logoUrl) {
+    img.src = state.logoUrl;
+    img.style.display = '';
+    emoji.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    emoji.style.display = '';
+  }
+}
+function renderAll() {
+  renderBrand();
+  populateRoomFilter();
+  populateYearFilters();
+  renderStudentsTable();
+  renderRoomCards();
+  renderRoomDetail();
+  renderAcademicYearList();
+  renderDeviceTypeList();
+  renderStats();
+}
+
+/* ============================ STUDENTS TAB ============================ */
+function populateRoomFilter() {
+  const sel = document.getElementById('studentRoomFilter');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">ทุกห้อง</option>' + state.rooms.map(r => `<option value="${r.ID}">${escapeHtml(r.RoomName)}</option>`).join('');
+  sel.value = current;
+}
+function populateYearFilters() {
+  const options = '<option value="">ทุกปีการศึกษา</option>' + state.academicYears
+    .slice().sort((a,b)=> (a.YearLabel>b.YearLabel?1:-1))
+    .map(y => `<option value="${y.ID}">ปีการศึกษา ${escapeHtml(y.YearLabel)}</option>`).join('');
+  ['roomYearFilter','statsYearFilter'].forEach(id => {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = options;
+    sel.value = current;
+  });
+}
+
+function renderStudentsTable() {
+  const wrap = document.getElementById('studentsTableWrap');
+  const search = (document.getElementById('studentSearch').value || '').toLowerCase();
+  const roomFilter = document.getElementById('studentRoomFilter').value;
+  let list = state.students.filter(s => {
+    const matchSearch = !search || (s.Name || '').toLowerCase().includes(search);
+    const matchRoom = !roomFilter || s.RoomID === roomFilter;
+    return matchSearch && matchRoom;
+  });
+  if (list.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🧑‍🎓</div><h3>ยังไม่มีข้อมูลนักเรียน</h3><p>กด "เพิ่มนักเรียน" เพื่อเริ่มบันทึกข้อมูล</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div style="overflow-x:auto;"><table><thead><tr>
+    <th></th><th>ชื่อ-สกุล</th><th>ห้องเตรียมความพร้อม</th><th>ประเภทความพิการ</th><th>วันเกิด / อายุ</th><th>ผู้ปกครอง</th><th>เบอร์โทร</th><th></th>
+  </tr></thead><tbody>` + list.map((s,i) => `
+    <tr>
+      <td>${s.PhotoUrl ? `<img class="avatar" src="${s.PhotoUrl}">` : `<div class="avatar-ph" style="background:${colorFor(i)};">${initials(s.Name)}</div>`}</td>
+      <td>${escapeHtml(s.Name)}</td>
+      <td><span class="tag" style="background:${colorFor(state.rooms.findIndex(r=>r.ID===s.RoomID))};">${escapeHtml(roomName(s.RoomID))}</span></td>
+      <td>${s.DisabilityType ? `<span class="tag" style="background:var(--gold); color:#5c4200;">${escapeHtml(s.DisabilityType)}</span>` : '<span style="color:#c2a98a;">-</span>'}</td>
+      <td>${formatThaiDate(s.BirthDate)}${s.BirthDate ? `<br><span style="color:#9b8168; font-size:12px;">${calcAge(s.BirthDate)}</span>` : ''}</td>
+      <td>${escapeHtml(s.ParentName || '-')}</td>
+      <td>${escapeHtml(s.Phone || '-')}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openStudentModal('${s.ID}')">แก้ไข</button>
+        <button class="btn btn-danger-ghost btn-sm" onclick="deleteStudent('${s.ID}')">ลบ</button>
+      </td>
+    </tr>`).join('') + `</tbody></table></div>`;
+}
+
+function openStudentModal(id) {
+  if (!state.isAdmin) { openLoginModal(() => openStudentModal(id)); return; }
+  const s = id ? state.students.find(x => x.ID === id) : null;
+  const roomOptions = state.rooms.map(r => `<option value="${r.ID}" ${s && s.RoomID === r.ID ? 'selected' : ''}>${escapeHtml(r.RoomName)}</option>`).join('');
+  const addressList = uniqueValues(state.students, 'Address');
+  const parentList = uniqueValues(state.students, 'ParentName');
+  const isKnownType = s && s.DisabilityType && DISABILITY_TYPES.includes(s.DisabilityType);
+  const currentType = s ? s.DisabilityType : '';
+  const showOtherBox = s && s.DisabilityType && !isKnownType;
+  const disabilityOptions = DISABILITY_TYPES.map(t => `<option value="${t}" ${ (isKnownType && currentType === t) || (showOtherBox && t === 'อื่นๆ') ? 'selected' : ''}>${t}</option>`).join('');
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal">
+      <h2>${s ? '✏️ แก้ไขข้อมูลนักเรียน' : '➕ เพิ่มนักเรียนใหม่'}</h2>
+      <div class="field"><label>ชื่อ-สกุล</label><input type="text" id="f_name" value="${s ? escapeAttr(s.Name) : ''}"></div>
+      <div class="field"><label>ห้องเตรียมความพร้อม</label><select id="f_room"><option value="">-- ไม่ระบุ --</option>${roomOptions}</select></div>
+      <div class="field"><label>ประเภทความพิการ</label>
+        <select id="f_disability_type"><option value="">-- ไม่ระบุ --</option>${disabilityOptions}</select>
+        <input type="text" id="f_disability_other" placeholder="ระบุประเภทความพิการ" style="margin-top:8px; ${showOtherBox ? '' : 'display:none;'}" value="${showOtherBox ? escapeAttr(s.DisabilityType) : ''}">
+      </div>
+      <div class="field"><label>วัน/เดือน/ปีเกิด (พ.ศ.)</label>${thaiDatePickerHtml('f_birthdate', s ? s.BirthDate : '')}
+        <div class="hint">อายุปัจจุบัน: <b id="f_age_display" style="color:var(--violet-dark);">${s && s.BirthDate ? calcAge(s.BirthDate) : '-'}</b></div>
+      </div>
+      <div class="field"><label>ที่อยู่</label><textarea id="f_address" list="dl_address">${s ? escapeHtml(s.Address || '') : ''}</textarea>${datalistHtml('dl_address', addressList)}</div>
+      <div class="field"><label>ผู้ปกครอง</label><input type="text" id="f_parent" list="dl_parent" value="${s ? escapeAttr(s.ParentName) : ''}">${datalistHtml('dl_parent', parentList)}</div>
+      <div class="field"><label>เบอร์โทรติดต่อ</label><input type="tel" id="f_phone" value="${s ? escapeAttr(s.Phone) : ''}"></div>
+      <div class="field">
+        <label>รูปนักเรียน</label>
+        <div class="photo-upload">
+          <img class="photo-preview" id="f_photo_preview" src="${s && s.PhotoUrl ? s.PhotoUrl : ''}" style="${s && s.PhotoUrl ? '' : 'display:none;'}">
+          <input type="file" accept="image/*" id="f_photo">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="f_save">บันทึก</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  document.getElementById('f_disability_type').addEventListener('change', (e) => {
+    document.getElementById('f_disability_other').style.display = e.target.value === 'อื่นๆ' ? '' : 'none';
+  });
+  ['f_birthdate_d','f_birthdate_m','f_birthdate_y'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => {
+      const iso = getThaiDateIso('f_birthdate');
+      document.getElementById('f_age_display').textContent = iso ? calcAge(iso) : '-';
+    });
+  });
+  document.getElementById('f_photo').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const prev = document.getElementById('f_photo_preview');
+    prev.src = URL.createObjectURL(file); prev.style.display = '';
+  });
+  document.getElementById('f_save').addEventListener('click', async () => {
+    const btn = document.getElementById('f_save');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+    try {
+      const typeSel = document.getElementById('f_disability_type').value;
+      const typeOther = document.getElementById('f_disability_other').value.trim();
+      const disabilityType = (typeSel === 'อื่นๆ' && typeOther) ? typeOther : typeSel;
+      const payload = {
+        action: s ? 'updateStudent' : 'addStudent',
+        id: s ? s.ID : undefined,
+        name: document.getElementById('f_name').value.trim(),
+        roomId: document.getElementById('f_room').value,
+        disabilityType: disabilityType,
+        birthDate: getThaiDateIso('f_birthdate'),
+        address: document.getElementById('f_address').value.trim(),
+        parentName: document.getElementById('f_parent').value.trim(),
+        phone: document.getElementById('f_phone').value.trim()
+      };
+      const file = document.getElementById('f_photo').files[0];
+      if (file) { payload.photoBase64 = await fileToBase64(file); payload.photoMime = file.type; }
+      await apiPost(payload);
+      closeModal();
+      await refreshData();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+      btn.disabled = false; btn.textContent = 'บันทึก';
+    }
+  });
+}
+async function deleteStudent(id) {
+  if (!state.isAdmin) { openLoginModal(() => deleteStudent(id)); return; }
+  if (!confirm('ยืนยันลบข้อมูลนักเรียนคนนี้? (รายการอุปกรณ์ที่เกี่ยวข้องจะไม่ถูกลบอัตโนมัติ)')) return;
+  try {
+    await apiPost({ action: 'deleteStudent', id });
+    await refreshData();
+  } catch (err) {
+    alert('ลบข้อมูลไม่สำเร็จ: ' + err.message);
+  }
+}
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+/* ============================ ROOMS TAB ============================ */
+function renderRoomCards() {
+  const wrap = document.getElementById('roomCardsWrap');
+  if (state.rooms.length === 0) {
+    wrap.innerHTML = `<div class="empty" style="grid-column:1/-1;"><div class="emoji">🏫</div><h3>ยังไม่มีห้องเตรียมความพร้อม</h3><p>เพิ่มห้องแรกได้จากช่องด้านบน</p></div>`;
+    return;
+  }
+  wrap.innerHTML = state.rooms.map((r,i) => {
+    const studentCount = state.students.filter(s => s.RoomID === r.ID).length;
+    const deviceCount = state.devices.filter(d => { const st = state.students.find(s => s.ID === d.StudentID); return st && st.RoomID === r.ID; }).length;
+    return `<div class="room-card ${state.selectedRoomId === r.ID ? 'selected' : ''}" style="border-top-color:${colorFor(i)};" onclick="selectRoom('${r.ID}')">
+      <div class="rname">${escapeHtml(r.RoomName)}</div>
+      <div class="room-stats">
+        <div><b style="color:${colorFor(i)};">${studentCount}</b>นักเรียน</div>
+        <div><b style="color:${colorFor(i)};">${deviceCount}</b>รายการอุปกรณ์</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function selectRoom(id) { state.selectedRoomId = id; renderRoomCards(); renderRoomDetail(); }
+document.getElementById('roomYearFilter') && document.getElementById('roomYearFilter').addEventListener('change', renderRoomDetail);
+
+function renderRoomDetail() {
+  const card = document.getElementById('roomDetailCard');
+  if (!state.selectedRoomId) { card.style.display = 'none'; return; }
+  const room = state.rooms.find(r => r.ID === state.selectedRoomId);
+  if (!room) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('roomDetailTitle').textContent = room.RoomName;
+
+  const roomStudents = state.students.filter(s => s.RoomID === room.ID);
+  const roomStudentIds = new Set(roomStudents.map(s => s.ID));
+  const yearFilter = document.getElementById('roomYearFilter').value;
+  let records = state.devices.filter(d => roomStudentIds.has(d.StudentID));
+  if (yearFilter) {
+    records = records.filter(d => { const ay = matchAcademicYear(d.ReceivedDate); return ay && ay.ID === yearFilter; });
+  }
+
+  const wrap = document.getElementById('deviceTableWrap');
+  if (records.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🦽</div><h3>ยังไม่มีการบันทึกอุปกรณ์ในห้องนี้</h3><p>กด "บันทึกอุปกรณ์ที่ได้รับ" เพื่อเริ่มบันทึก</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<table><thead><tr>
+    <th></th><th>นักเรียน</th><th>อุปกรณ์ที่ได้รับ</th><th>หน่วยงานที่มอบ</th><th>วันที่ได้รับ</th><th>ปีการศึกษา</th><th>ผลการติดตามการใช้งาน</th><th></th>
+  </tr></thead><tbody>` + records.map((d,i) => {
+    const ay = matchAcademicYear(d.ReceivedDate);
+    return `
+    <tr>
+      <td>${d.PhotoUrl ? `<img class="avatar" src="${d.PhotoUrl}">` : `<div class="avatar-ph" style="background:${colorFor(i)};">${initials(studentName(d.StudentID))}</div>`}</td>
+      <td>${escapeHtml(studentName(d.StudentID))}</td>
+      <td><span class="tag" style="background:var(--coral);">${escapeHtml(d.DeviceName)}</span></td>
+      <td>${escapeHtml(d.Provider || '-')}</td>
+      <td>${formatThaiDate(d.ReceivedDate)}</td>
+      <td>${ay ? `<span class="tag" style="background:var(--sky);">${escapeHtml(ay.YearLabel)}</span>` : '<span style="color:#9b96bd;">ไม่ระบุ</span>'}</td>
+      <td style="max-width:220px;">${escapeHtml(d.Notes || '-')}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="openDeviceModal('${d.ID}')">แก้ไข</button>
+        <button class="btn btn-danger-ghost btn-sm" onclick="deleteDevice('${d.ID}')">ลบ</button>
+      </td>
+    </tr>`;
+  }).join('') + `</tbody></table>`;
+}
+
+async function addRoom() {
+  if (!state.isAdmin) { openLoginModal(addRoom); return; }
+  const input = document.getElementById('newRoomName');
+  const name = input.value.trim();
+  if (!name) return;
+  const btn = document.getElementById('btnAddRoom');
+  btn.disabled = true;
+  try {
+    await apiPost({ action: 'addRoom', name });
+    input.value = '';
+    await refreshData();
+  } catch (err) {
+    alert('เพิ่มห้องไม่สำเร็จ: ' + err.message + '\n\nตรวจสอบว่าเชื่อมต่อ Google Sheet ไว้แล้ว (ดูสถานะมุมล่างซ้าย) และลองกด "ทดสอบการเชื่อมต่ออีกครั้ง" ในหน้าตั้งค่า');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function deleteRoomCurrent() {
+  if (!state.isAdmin) { openLoginModal(deleteRoomCurrent); return; }
+  if (!state.selectedRoomId) return;
+  const studentCount = state.students.filter(s => s.RoomID === state.selectedRoomId).length;
+  const msg = studentCount > 0
+    ? `ห้องนี้ยังมีนักเรียน ${studentCount} คนอยู่ ยืนยันลบห้องนี้หรือไม่? (นักเรียนจะไม่ถูกลบ แต่จะไม่มีห้องระบุ)`
+    : 'ยืนยันลบห้องนี้?';
+  if (!confirm(msg)) return;
+  try {
+    await apiPost({ action: 'deleteRoom', id: state.selectedRoomId });
+    state.selectedRoomId = null;
+    await refreshData();
+  } catch (err) {
+    alert('ลบห้องไม่สำเร็จ: ' + err.message);
+  }
+}
+
+function openDeviceModal(id) {
+  if (!state.isAdmin) { openLoginModal(() => openDeviceModal(id)); return; }
+  const d = id ? state.devices.find(x => x.ID === id) : null;
+  const roomStudents = state.students.filter(s => s.RoomID === state.selectedRoomId);
+  const studentOptions = roomStudents.map(s => `<option value="${s.ID}" ${d && d.StudentID === s.ID ? 'selected' : ''}>${escapeHtml(s.Name)}</option>`).join('');
+  const providerList = uniqueValues(state.devices, 'Provider');
+  const knownTypeNames = state.deviceTypes.map(t => t.TypeName);
+  const currentIsKnown = d && knownTypeNames.includes(d.DeviceName);
+  let deviceTypeOptions = state.deviceTypes.slice().sort((a,b)=> (a.TypeName>b.TypeName?1:-1))
+    .map(t => `<option value="${escapeAttr(t.TypeName)}" ${d && d.DeviceName === t.TypeName ? 'selected' : ''}>${escapeHtml(t.TypeName)}</option>`).join('');
+  if (d && d.DeviceName && !currentIsKnown) {
+    deviceTypeOptions += `<option value="${escapeAttr(d.DeviceName)}" selected>${escapeHtml(d.DeviceName)} (เดิม)</option>`;
+  }
+  const html = `
+  <div class="modal-overlay" id="overlay">
+    <div class="modal">
+      <h2>${d ? '✏️ แก้ไขข้อมูลอุปกรณ์' : '➕ บันทึกอุปกรณ์ที่ได้รับ'}</h2>
+      <div class="field"><label>นักเรียน</label><select id="d_student">${studentOptions || '<option value="">-- ไม่มีนักเรียนในห้องนี้ --</option>'}</select></div>
+      <div class="field"><label>อุปกรณ์ช่วยเหลือที่ได้รับ</label><select id="d_name">${deviceTypeOptions || '<option value="">-- ยังไม่มีรายการอุปกรณ์ ไปเพิ่มที่ตั้งค่า --</option>'}</select>
+        <div class="hint">ไปที่ "ตั้งค่า > จัดการประเภทอุปกรณ์ช่วยเหลือ" หากต้องการเพิ่มรายการใหม่</div>
+      </div>
+      <div class="field"><label>หน่วยงานที่มอบอุปกรณ์</label><input type="text" id="d_provider" list="dl_provider" value="${d ? escapeAttr(d.Provider) : ''}">${datalistHtml('dl_provider', providerList)}</div>
+      <div class="field"><label>วัน/เดือน/ปีที่ได้รับอุปกรณ์ (พ.ศ.)</label>${thaiDatePickerHtml('d_date', d ? d.ReceivedDate : '')}</div>
+      <div class="field">
+        <label>รูปภาพนักเรียน (ขณะใช้อุปกรณ์)</label>
+        <div class="photo-upload">
+          <img class="photo-preview" id="d_photo_preview" src="${d && d.PhotoUrl ? d.PhotoUrl : ''}" style="${d && d.PhotoUrl ? '' : 'display:none;'}">
+          <input type="file" accept="image/*" id="d_photo">
+        </div>
+      </div>
+      <div class="field"><label>รายละเอียดผลการติดตามการใช้งานอุปกรณ์</label><textarea id="d_notes">${d ? escapeHtml(d.Notes || '') : ''}</textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn btn-violet" id="d_save">บันทึก</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+  document.getElementById('d_photo').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const prev = document.getElementById('d_photo_preview');
+    prev.src = URL.createObjectURL(file); prev.style.display = '';
+  });
+  document.getElementById('d_save').addEventListener('click', async () => {
+    const btn = document.getElementById('d_save');
+    const studentId = document.getElementById('d_student').value;
+    if (!studentId) { alert('กรุณาเลือกนักเรียน (ต้องมีนักเรียนในห้องนี้ก่อน)'); return; }
+    const deviceName = document.getElementById('d_name').value;
+    if (!deviceName) { alert('กรุณาเลือกอุปกรณ์ช่วยเหลือ (ไปเพิ่มรายการได้ที่ ตั้งค่า > จัดการประเภทอุปกรณ์ช่วยเหลือ)'); return; }
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+    try {
+      const payload = {
+        action: d ? 'updateDevice' : 'addDevice',
+        id: d ? d.ID : undefined,
+        studentId,
+        deviceName: deviceName,
+        provider: document.getElementById('d_provider').value.trim(),
+        receivedDate: getThaiDateIso('d_date'),
+        notes: document.getElementById('d_notes').value.trim()
+      };
+      const file = document.getElementById('d_photo').files[0];
+      if (file) { payload.photoBase64 = await fileToBase64(file); payload.photoMime = file.type; }
+      await apiPost(payload);
+      closeModal();
+      await refreshData();
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + err.message);
+      btn.disabled = false; btn.textContent = 'บันทึก';
+    }
+  });
+}
+async function deleteDevice(id) {
+  if (!state.isAdmin) { openLoginModal(() => deleteDevice(id)); return; }
+  if (!confirm('ยืนยันลบรายการอุปกรณ์นี้?')) return;
+  try {
+    await apiPost({ action: 'deleteDevice', id });
+    await refreshData();
+  } catch (err) {
+    alert('ลบรายการไม่สำเร็จ: ' + err.message);
+  }
+}
+
+/* ============================ SETTINGS: ACADEMIC YEARS ============================ */
+document.getElementById('ay_start_wrap').innerHTML = thaiDatePickerHtml('ay_start');
+document.getElementById('ay_end_wrap').innerHTML = thaiDatePickerHtml('ay_end');
+
+function renderAcademicYearList() {
+  const wrap = document.getElementById('academicYearList');
+  if (state.academicYears.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🗓️</div><h3>ยังไม่มีปีการศึกษา</h3><p>เพิ่มปีการศึกษาแรกได้จากฟอร์มด้านบน</p></div>`;
+    return;
+  }
+  wrap.innerHTML = state.academicYears.slice().sort((a,b)=> (a.YearLabel<b.YearLabel?1:-1)).map((ay,i) => `
+    <div class="ay-row">
+      <b style="color:${colorFor(i)};">${escapeHtml(ay.YearLabel)}</b>
+      <span>${formatThaiDate(ay.StartDate)} — ${formatThaiDate(ay.EndDate)}</span>
+      <div class="spacer"></div>
+      <button class="btn btn-danger-ghost btn-sm" onclick="deleteAcademicYear('${ay.ID}')">ลบ</button>
+    </div>`).join('');
+}
+
+document.getElementById('btnAddAcademicYear').addEventListener('click', async () => {
+  if (!state.isAdmin) { openLoginModal(); return; }
+  const label = document.getElementById('ay_label').value.trim();
+  const start = getThaiDateIso('ay_start');
+  const end = getThaiDateIso('ay_end');
+  if (!label || !start || !end) { alert('กรุณากรอกชื่อปีการศึกษาและวันที่ให้ครบถ้วน'); return; }
+  if (start > end) { alert('วันเริ่มต้นต้องมาก่อนวันสิ้นสุด'); return; }
+  const btn = document.getElementById('btnAddAcademicYear');
+  btn.disabled = true;
+  try {
+    await apiPost({ action: 'addAcademicYear', yearLabel: label, startDate: start, endDate: end });
+    document.getElementById('ay_label').value = '';
+    await refreshData();
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally { btn.disabled = false; }
+});
+async function deleteAcademicYear(id) {
+  if (!state.isAdmin) { openLoginModal(() => deleteAcademicYear(id)); return; }
+  if (!confirm('ยืนยันลบปีการศึกษานี้?')) return;
+  await apiPost({ action: 'deleteAcademicYear', id });
+  await refreshData();
+}
+
+/* ============================ SETTINGS: DEVICE TYPES ============================ */
+function renderDeviceTypeList() {
+  const wrap = document.getElementById('deviceTypeList');
+  if (state.deviceTypes.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🦽</div><h3>ยังไม่มีรายการอุปกรณ์</h3><p>เพิ่มอุปกรณ์แรกได้จากช่องด้านบน</p></div>`;
+    return;
+  }
+  wrap.innerHTML = state.deviceTypes.slice().sort((a,b)=> (a.TypeName>b.TypeName?1:-1)).map((t,i) => `
+    <div class="ay-row">
+      <span class="tag" style="background:${colorFor(i)};">${escapeHtml(t.TypeName)}</span>
+      <div class="spacer"></div>
+      <button class="btn btn-danger-ghost btn-sm" onclick="deleteDeviceType('${t.ID}')">ลบ</button>
+    </div>`).join('');
+}
+document.getElementById('btnAddDeviceType').addEventListener('click', async () => {
+  if (!state.isAdmin) { openLoginModal(); return; }
+  const input = document.getElementById('newDeviceTypeName');
+  const name = input.value.trim();
+  if (!name) return;
+  const btn = document.getElementById('btnAddDeviceType');
+  btn.disabled = true;
+  try {
+    await apiPost({ action: 'addDeviceType', typeName: name });
+    input.value = '';
+    await refreshData();
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+  } finally { btn.disabled = false; }
+});
+document.getElementById('newDeviceTypeName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btnAddDeviceType').click(); });
+async function deleteDeviceType(id) {
+  if (!state.isAdmin) { openLoginModal(() => deleteDeviceType(id)); return; }
+  if (!confirm('ยืนยันลบอุปกรณ์นี้ออกจากรายการ? (รายการที่เคยบันทึกไปแล้วจะไม่ถูกลบ)')) return;
+  await apiPost({ action: 'deleteDeviceType', id });
+  await refreshData();
+}
+
+/* ============================ STATS TAB ============================ */
+document.getElementById('statsYearFilter').addEventListener('change', renderStats);
+
+function renderStats() {
+  const yearFilter = document.getElementById('statsYearFilter').value;
+  let devices = state.devices;
+  if (yearFilter) devices = devices.filter(d => { const ay = matchAcademicYear(d.ReceivedDate); return ay && ay.ID === yearFilter; });
+
+  document.getElementById('statTotalStudents').textContent = state.students.length;
+  document.getElementById('statTotalRooms').textContent = state.rooms.length;
+  document.getElementById('statTotalDevices').textContent = devices.length;
+  const years = new Set(devices.map(d => { const ay = matchAcademicYear(d.ReceivedDate); return ay ? ay.YearLabel : null; }).filter(Boolean));
+  document.getElementById('statTotalYears').textContent = years.size;
+
+  const byType = {};
+  devices.forEach(d => { const k = d.DeviceName || 'ไม่ระบุ'; byType[k] = (byType[k] || 0) + 1; });
+  drawChart('chartDeviceType', 'bar', Object.keys(byType), Object.values(byType));
+
+  const byYear = {};
+  state.devices.forEach(d => { const ay = matchAcademicYear(d.ReceivedDate); const k = ay ? ay.YearLabel : 'ไม่ระบุ'; byYear[k] = (byYear[k] || 0) + 1; });
+  const yearKeys = Object.keys(byYear).sort();
+  drawChart('chartByYear', 'bar', yearKeys, yearKeys.map(k => byYear[k]));
+
+  const byRoom = {};
+  state.rooms.forEach(r => { byRoom[r.RoomName] = 0; });
+  devices.forEach(d => { const st = state.students.find(s => s.ID === d.StudentID); if (st) { const rn = roomName(st.RoomID); byRoom[rn] = (byRoom[rn] || 0) + 1; } });
+  drawChart('chartByRoom', 'bar', Object.keys(byRoom), Object.values(byRoom), true);
+}
+
+function drawChart(canvasId, type, labels, data, horizontal) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (charts[canvasId]) charts[canvasId].destroy();
+  const colors = labels.map((_,i) => colorFor(i));
+  charts[canvasId] = new Chart(ctx, {
+    type,
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 8, maxBarThickness: 46 }] },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { family: "'IBM Plex Sans Thai'" } }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0, font: { family: "'IBM Plex Sans Thai'" } }, grid: { color: '#E9F5E1' } }
+      }
+    }
+  });
+}
+
+/* ============================ UTIL ============================ */
+function escapeHtml(str) {
+  if (str === undefined || str === null) return '';
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(str) { return escapeHtml(str); }
+
+document.getElementById('logo_file').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const prev = document.getElementById('logo_preview');
+  prev.src = URL.createObjectURL(file); prev.style.display = '';
+});
+document.getElementById('btnUploadLogo').addEventListener('click', async () => {
+  if (!state.isAdmin) { openLoginModal(); return; }
+  const file = document.getElementById('logo_file').files[0];
+  const status = document.getElementById('logoStatus');
+  if (!file) { status.textContent = 'กรุณาเลือกไฟล์รูปโลโก้ก่อน'; return; }
+  const btn = document.getElementById('btnUploadLogo');
+  btn.disabled = true; status.textContent = 'กำลังอัปโหลด...';
+  try {
+    const photoBase64 = await fileToBase64(file);
+    await apiPost({ action: 'setLogo', photoBase64, photoMime: file.type });
+    status.textContent = '✓ อัปโหลดโลโก้สำเร็จ';
+    await refreshData();
+  } catch (err) {
+    status.textContent = 'อัปโหลดไม่สำเร็จ: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+/* ============================ NAV ============================ */
+const ADMIN_ONLY_TABS = ['students', 'rooms', 'settings'];
+document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (ADMIN_ONLY_TABS.includes(btn.dataset.tab) && !state.isAdmin) {
+      openLoginModal(() => btn.click());
+      return;
+    }
+    document.querySelectorAll('.nav-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+  });
+});
+
+document.getElementById('studentSearch').addEventListener('input', renderStudentsTable);
+document.getElementById('studentRoomFilter').addEventListener('change', renderStudentsTable);
+document.getElementById('btnAddStudent').addEventListener('click', () => openStudentModal(null));
+document.getElementById('btnAddRoom').addEventListener('click', addRoom);
+document.getElementById('newRoomName').addEventListener('keydown', e => { if (e.key === 'Enter') addRoom(); });
+document.getElementById('btnAddDevice').addEventListener('click', () => openDeviceModal(null));
+document.getElementById('btnDeleteRoom').addEventListener('click', deleteRoomCurrent);
+
+document.getElementById('btnSaveUrl').addEventListener('click', async () => {
+  const url = document.getElementById('webAppUrl').value.trim();
+  const status = document.getElementById('settingsStatus');
+  if (!url) { status.textContent = 'กรุณาใส่ URL'; return; }
+  state.webAppUrl = url;
+  await saveUrl(url);
+  status.textContent = 'กำลังทดสอบการเชื่อมต่อ...';
+  const ok = await connectAndLoad();
+  status.textContent = ok ? '✓ เชื่อมต่อสำเร็จ พร้อมใช้งาน' : '✗ เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL และการตั้งค่า Deploy (ดู SETUP.md)';
+});
+document.getElementById('btnRetest').addEventListener('click', async () => {
+  const status = document.getElementById('settingsStatus');
+  status.textContent = 'กำลังทดสอบ...';
+  const ok = await connectAndLoad();
+  status.textContent = ok ? '✓ เชื่อมต่อสำเร็จ' : '✗ เชื่อมต่อไม่สำเร็จ';
+});
+
+/* ============================ BOOT ============================ */
+(async function boot() {
+  renderAdminBox();
+  await loadSavedUrl();
+  if (state.webAppUrl) {
+    document.getElementById('webAppUrl').value = state.webAppUrl;
+    await connectAndLoad();
+  } else {
+    document.querySelector('.nav-btn[data-tab="settings"]').click();
+  }
+})();
+</script>
+</body>
+</html>
