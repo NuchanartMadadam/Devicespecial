@@ -357,15 +357,15 @@ const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','ม�
 const PALETTE = ['#2E9E44','#FF7A29','#FFC93C','#9C27B0','#FF4D6D','#00B884','#F4511E','#7CB342'];
 function colorFor(i){ return PALETTE[i % PALETTE.length]; }
 const DISABILITY_TYPES = [
-  'บกพร่องทางการเห็น',
-  'บกพร่องทางการได้ยิน',
-  'บกพร่องทางสติปัญญา',
-  'บกพร่องทางร่างกายหรือการเคลื่อนไหวหรือสุขภาพ',
-  'บกพร่องทางการเรียนรู้',
-  'บกพร่องทางการพูดและภาษา',
-  'บกพร่องทางพฤติกรรมหรืออารมณ์',
-  'ออทิสติก',
-  'พิการซ้อน',
+  'บุคคลที่มีความบกพร่องทางการเห็น',
+  'บุคคลที่มีความบกพร่องทางการได้ยิน',
+  'บุคคลที่มีความบกพร่องทางสติปัญญา',
+  'บุคคลที่มีความบกพร่องทางร่างกายหรือการเคลื่อนไหวหรือสุขภาพ',
+  'บุคคลที่มีความบกพร่องทางการเรียนรู้',
+  'บุคคลที่มีความบกพร่องทางการพูดและภาษา',
+  'บุคคลที่มีความบกพร่องทางพฤติกรรมหรืออารมณ์',
+  'บุคคลออทิสติก',
+  'บุคคลที่มีความพิการซ้อน',
   'อื่นๆ'
 ];
 function calcAge(birthIso) {
@@ -400,7 +400,7 @@ let charts = {};
 
 /* ค่าเริ่มต้น: ลิงก์ Google Apps Script Web App ของระบบนี้ — ฝังไว้ให้เชื่อมต่อทันทีโดยไม่ต้องตั้งค่าเอง
    (แอดมินยังเปลี่ยนได้ทีหลังที่แท็บ "ตั้งค่า" ถ้าต้องการย้ายไปใช้ Google Sheet ชุดอื่น) */
-const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxDsKrG8LZOYomeJqi7M9xF8W0RxztaSjUiu3dZN06Os1YtL5333KWJfGiMe596NWYy/exec';
+const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxAd44mY4-R-HY66QrMTrTve4kbZnj8NljPmAEDH4HNr-TpDwNFr_Qn-3Ud8mREd-g/exec';
 
 /* ============================ STORAGE (persistent artifact storage, NOT localStorage) ============================ */
 async function loadSavedUrl() {
@@ -618,8 +618,11 @@ function renderBrand() {
   const emoji = document.getElementById('brandEmoji');
   const imgTop = document.getElementById('brandLogoTop');
   const emojiTop = document.getElementById('brandEmojiTop');
+  const onFail = (imgEl, emojiEl) => { imgEl.style.display = 'none'; emojiEl.style.display = ''; };
   if (state.logoUrl) {
+    img.onerror = () => onFail(img, emoji);
     img.src = state.logoUrl; img.style.display = ''; emoji.style.display = 'none';
+    imgTop.onerror = () => onFail(imgTop, emojiTop);
     imgTop.src = state.logoUrl; imgTop.style.display = ''; emojiTop.style.display = 'none';
   } else {
     img.style.display = 'none'; emoji.style.display = '';
