@@ -222,7 +222,7 @@
       <small>ศูนย์การศึกษาพิเศษ เขตการศึกษา 3 จังหวัดสงขลา</small>
     </div>
     <button class="nav-btn" data-tab="students"><span class="nav-emoji">🧑‍🎓</span> ข้อมูลนักเรียน</button>
-    <button class="nav-btn" data-tab="rooms"><span class="nav-emoji">🏫</span> ห้องเตรียมความพร้อม</button>
+    <button class="nav-btn" data-tab="rooms"><span class="nav-emoji">🏫</span> ข้อมูลนักเรียนที่ได้รับอุปกรณ์</button>
     <button class="nav-btn active" data-tab="stats"><span class="nav-emoji">📊</span> สถิติ</button>
     <button class="nav-btn" id="navSettings" data-tab="settings"><span class="nav-emoji">⚙️</span> ตั้งค่า</button>
     <div class="sidebar-footer">
@@ -253,32 +253,49 @@
     <!-- ROOMS TAB -->
     <div id="tab-rooms" class="tab-panel" style="display:none;">
       <div class="page-head">
-        <h1>ห้องเตรียมความพร้อม 🏫</h1>
+        <h1>ข้อมูลนักเรียนที่ได้รับอุปกรณ์ 🏫</h1>
         <p>จัดการรายชื่อห้อง และบันทึกอุปกรณ์ช่วยเหลือที่นักเรียนแต่ละคนได้รับ</p>
       </div>
 
-      <div class="card" style="margin-bottom:18px;">
-        <div class="toolbar">
-          <input type="text" id="newRoomName" placeholder="ชื่อห้องเตรียมความพร้อมใหม่ เช่น ห้องเตรียม 1">
-          <button class="btn btn-tangerine" id="btnAddRoom">+ เพิ่มห้อง</button>
+      <div class="toolbar" style="margin-bottom:16px;">
+        <button class="btn btn-violet btn-sm" id="btnViewByRoom">ดูตามห้อง</button>
+        <button class="btn btn-ghost btn-sm" id="btnViewByYear">ดูตามปีการศึกษา</button>
+      </div>
+
+      <div id="roomsViewByRoom">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="toolbar">
+            <input type="text" id="newRoomName" placeholder="ชื่อห้องเตรียมความพร้อมใหม่ เช่น ห้องเตรียม 1">
+            <button class="btn btn-tangerine" id="btnAddRoom">+ เพิ่มห้อง</button>
+          </div>
+          <div class="field" style="max-width:420px; margin-top:14px; margin-bottom:0;">
+            <label>เลือกห้องเพื่อดูรายละเอียด</label>
+            <select id="roomSelect"><option value="">-- เลือกห้อง --</option></select>
+          </div>
         </div>
-        <div class="field" style="max-width:420px; margin-top:14px; margin-bottom:0;">
-          <label>เลือกห้องเพื่อดูรายละเอียด</label>
-          <select id="roomSelect"><option value="">-- เลือกห้อง --</option></select>
+
+        <div class="card" id="roomDetailCard" style="display:none;">
+          <div class="toolbar">
+            <h2 id="roomDetailTitle" style="margin:0; color:var(--violet-dark);"></h2>
+            <button class="btn btn-ghost btn-sm" id="btnEditRoomName">✏️ แก้ไขชื่อห้อง</button>
+            <div class="spacer"></div>
+            <select id="roomYearFilter" style="min-width:170px;"><option value="">ทุกปีการศึกษา</option></select>
+            <button class="btn btn-violet btn-sm" id="btnAddDevice">+ บันทึกอุปกรณ์ที่ได้รับ</button>
+            <button class="btn btn-danger-ghost btn-sm" id="btnDeleteRoom">ลบห้องนี้</button>
+          </div>
+          <div id="roomStatsLine" class="hint" style="margin-bottom:12px;"></div>
+          <div id="deviceTableWrap"></div>
         </div>
       </div>
 
-      <div class="card" id="roomDetailCard" style="display:none;">
-        <div class="toolbar">
-          <h2 id="roomDetailTitle" style="margin:0; color:var(--violet-dark);"></h2>
-          <button class="btn btn-ghost btn-sm" id="btnEditRoomName">✏️ แก้ไขชื่อห้อง</button>
-          <div class="spacer"></div>
-          <select id="roomYearFilter" style="min-width:170px;"><option value="">ทุกปีการศึกษา</option></select>
-          <button class="btn btn-violet btn-sm" id="btnAddDevice">+ บันทึกอุปกรณ์ที่ได้รับ</button>
-          <button class="btn btn-danger-ghost btn-sm" id="btnDeleteRoom">ลบห้องนี้</button>
+      <div id="roomsViewByYear" style="display:none;">
+        <div class="card">
+          <div class="toolbar">
+            <label style="margin:0;">เลือกปีการศึกษา</label>
+            <select id="allYearSelect"><option value="">-- เลือกปีการศึกษา --</option></select>
+          </div>
+          <div id="allYearTableWrap"></div>
         </div>
-        <div id="roomStatsLine" class="hint" style="margin-bottom:12px;"></div>
-        <div id="deviceTableWrap"></div>
       </div>
     </div>
 
@@ -306,6 +323,11 @@
         <h3 style="margin-top:0; color:var(--violet-dark);">การได้รับอุปกรณ์แยกตามห้องเตรียมความพร้อม</h3>
         <canvas id="chartByRoom" height="140"></canvas>
       </div>
+      <div class="page-head" style="margin-top:26px;">
+        <h1 style="font-size:20px;">รายละเอียดแยกตามปีการศึกษา 🗓️</h1>
+        <p>อุปกรณ์แต่ละประเภท หน่วยงานที่มอบ และห้องที่ได้รับ ในแต่ละปีการศึกษา</p>
+      </div>
+      <div id="yearDetailWrap"></div>
     </div>
 
     <!-- SETTINGS TAB -->
@@ -722,6 +744,7 @@ function renderAll() {
   renderAcademicYearList();
   renderDeviceTypeList();
   renderStats();
+  renderAllYearTable();
 }
 
 /* ============================ STUDENTS TAB ============================ */
@@ -732,8 +755,8 @@ function populateRoomFilter() {
   sel.value = current;
 }
 function populateYearFilters() {
-  const options = '<option value="">ทุกปีการศึกษา</option>' + state.academicYears
-    .slice().sort((a,b)=> (a.YearLabel>b.YearLabel?1:-1))
+  const sortedYears = state.academicYears.slice().sort((a,b)=> (a.YearLabel>b.YearLabel?1:-1));
+  const options = '<option value="">ทุกปีการศึกษา</option>' + sortedYears
     .map(y => `<option value="${y.ID}">ปีการศึกษา ${escapeHtml(y.YearLabel)}</option>`).join('');
   ['roomYearFilter','statsYearFilter'].forEach(id => {
     const sel = document.getElementById(id);
@@ -741,6 +764,11 @@ function populateYearFilters() {
     sel.innerHTML = options;
     sel.value = current;
   });
+  const allYearSel = document.getElementById('allYearSelect');
+  const currentAllYear = allYearSel.value;
+  allYearSel.innerHTML = '<option value="">-- เลือกปีการศึกษา --</option>' + sortedYears
+    .map(y => `<option value="${y.ID}">ปีการศึกษา ${escapeHtml(y.YearLabel)}</option>`).join('');
+  allYearSel.value = currentAllYear;
 }
 
 function renderStudentsTable() {
@@ -889,6 +917,54 @@ document.getElementById('roomSelect').addEventListener('change', (e) => {
   renderRoomDetail();
 });
 document.getElementById('roomYearFilter') && document.getElementById('roomYearFilter').addEventListener('change', renderRoomDetail);
+
+/* ---- toggle: by room vs by academic year ---- */
+document.getElementById('btnViewByRoom').addEventListener('click', () => setRoomsViewMode('room'));
+document.getElementById('btnViewByYear').addEventListener('click', () => setRoomsViewMode('year'));
+function setRoomsViewMode(mode) {
+  document.getElementById('roomsViewByRoom').style.display = mode === 'room' ? '' : 'none';
+  document.getElementById('roomsViewByYear').style.display = mode === 'year' ? '' : 'none';
+  document.getElementById('btnViewByRoom').className = 'btn btn-sm ' + (mode === 'room' ? 'btn-violet' : 'btn-ghost');
+  document.getElementById('btnViewByYear').className = 'btn btn-sm ' + (mode === 'year' ? 'btn-violet' : 'btn-ghost');
+  if (mode === 'year') renderAllYearTable();
+}
+document.getElementById('allYearSelect').addEventListener('change', renderAllYearTable);
+function renderAllYearTable() {
+  const wrap = document.getElementById('allYearTableWrap');
+  const yearId = document.getElementById('allYearSelect').value;
+  if (!yearId) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🗓️</div><h3>เลือกปีการศึกษาที่ต้องการดู</h3><p>จะแสดงรายชื่อนักเรียนทุกห้องที่ได้รับอุปกรณ์ในปีนั้น</p></div>`;
+    return;
+  }
+  const ay = state.academicYears.find(y => y.ID === yearId);
+  const records = state.devices.filter(d => { const m = matchAcademicYear(d.ReceivedDate); return m && m.ID === yearId; });
+  if (records.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🦽</div><h3>ยังไม่มีข้อมูลในปีการศึกษานี้</h3></div>`;
+    return;
+  }
+  records.sort((a, b) => {
+    const rnA = (() => { const st = state.students.find(s => s.ID === a.StudentID); return st ? roomName(st.RoomID) : ''; })();
+    const rnB = (() => { const st = state.students.find(s => s.ID === b.StudentID); return st ? roomName(st.RoomID) : ''; })();
+    return rnA.localeCompare(rnB, 'th') || studentName(a.StudentID).localeCompare(studentName(b.StudentID), 'th');
+  });
+  wrap.innerHTML = `<div style="overflow-x:auto;"><table><thead><tr>
+    <th></th><th>นักเรียน</th><th>ห้อง</th><th>อุปกรณ์ที่ได้รับ</th><th>หน่วยงานที่มอบ</th><th>วันที่ได้รับ</th><th>ผลการติดตามการใช้งาน</th>
+  </tr></thead><tbody>` + records.map((d, i) => {
+    const st = state.students.find(s => s.ID === d.StudentID);
+    const rn = st ? roomName(st.RoomID) : 'ไม่ระบุห้อง';
+    const roomIdx = state.rooms.findIndex(r => st && r.ID === st.RoomID);
+    return `<tr>
+      <td>${d.PhotoUrl ? `<img class="avatar" src="${d.PhotoUrl}">` : `<div class="avatar-ph" style="background:${colorFor(i)};">${initials(studentName(d.StudentID))}</div>`}</td>
+      <td>${escapeHtml(studentName(d.StudentID))}</td>
+      <td><span class="tag" style="background:${colorFor(roomIdx >= 0 ? roomIdx : i)};">${escapeHtml(rn)}</span></td>
+      <td><span class="tag" style="background:var(--coral);">${escapeHtml(d.DeviceName)}</span></td>
+      <td>${escapeHtml(d.Provider || '-')}</td>
+      <td>${formatThaiDate(d.ReceivedDate)}</td>
+      <td style="max-width:220px;">${escapeHtml(d.Notes || '-')}</td>
+    </tr>`;
+  }).join('') + `</tbody></table></div>`;
+}
+
 document.getElementById('btnEditRoomName').addEventListener('click', () => {
   if (!state.isAdmin) { openLoginModal(); return; }
   const room = state.rooms.find(r => r.ID === state.selectedRoomId);
@@ -1268,6 +1344,60 @@ function renderStats() {
   state.rooms.forEach(r => { byRoom[r.RoomName] = 0; });
   devices.forEach(d => { const st = state.students.find(s => s.ID === d.StudentID); if (st) { const rn = roomName(st.RoomID); byRoom[rn] = (byRoom[rn] || 0) + 1; } });
   drawChart('chartByRoom', 'bar', Object.keys(byRoom), Object.values(byRoom), true);
+
+  renderYearDetail();
+}
+
+function renderYearDetail() {
+  const wrap = document.getElementById('yearDetailWrap');
+  if (!wrap) return;
+  const years = state.academicYears.slice().sort((a, b) => (a.YearLabel < b.YearLabel ? 1 : -1));
+  if (years.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="emoji">🗓️</div><h3>ยังไม่มีปีการศึกษา</h3><p>เพิ่มปีการศึกษาได้ที่ ตั้งค่า > จัดการปีการศึกษา</p></div>`;
+    return;
+  }
+  wrap.innerHTML = years.map((ay, yi) => {
+    const yearDevices = state.devices.filter(d => { const m = matchAcademicYear(d.ReceivedDate); return m && m.ID === ay.ID; });
+    const studentIds = new Set(yearDevices.map(d => d.StudentID));
+
+    const byType = {};
+    yearDevices.forEach(d => { const k = d.DeviceName || 'ไม่ระบุ'; byType[k] = (byType[k] || 0) + 1; });
+    const typeBadges = Object.keys(byType).length
+      ? Object.keys(byType).map((k, i) => `<span class="tag" style="background:${colorFor(i)};">${escapeHtml(k)} · ${byType[k]} คน</span>`).join(' ')
+      : '<span style="color:#9b96bd; font-size:13px;">ยังไม่มีข้อมูล</span>';
+
+    const byProvider = {};
+    yearDevices.forEach(d => { const k = d.Provider || 'ไม่ระบุหน่วยงาน'; byProvider[k] = (byProvider[k] || 0) + 1; });
+    const providerBadges = Object.keys(byProvider).length
+      ? Object.keys(byProvider).map((k, i) => `<span class="tag" style="background:${colorFor(i + 3)};">${escapeHtml(k)} · ${byProvider[k]} คน</span>`).join(' ')
+      : '<span style="color:#9b96bd; font-size:13px;">ยังไม่มีข้อมูล</span>';
+
+    const byRoomDevices = {};
+    yearDevices.forEach(d => {
+      const st = state.students.find(s => s.ID === d.StudentID);
+      const rn = st ? roomName(st.RoomID) : 'ไม่ระบุห้อง';
+      if (!byRoomDevices[rn]) byRoomDevices[rn] = {};
+      const k = d.DeviceName || 'ไม่ระบุ';
+      byRoomDevices[rn][k] = (byRoomDevices[rn][k] || 0) + 1;
+    });
+    const roomRows = Object.keys(byRoomDevices).sort((a, b) => a.localeCompare(b, 'th'));
+    const roomTable = roomRows.length
+      ? `<table><tbody>${roomRows.map(rn => `<tr><td style="width:40%;">${escapeHtml(rn)}</td><td>${Object.entries(byRoomDevices[rn]).map(([k, c]) => `${escapeHtml(k)} x${c}`).join(', ')}</td></tr>`).join('')}</tbody></table>`
+      : '<div class="hint">ยังไม่มีข้อมูล</div>';
+
+    return `<div class="card" style="border-top:5px solid ${colorFor(yi)}; margin-bottom:16px;">
+      <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:14px;">
+        <h3 style="margin:0; color:${colorFor(yi)};">ปีการศึกษา ${escapeHtml(ay.YearLabel)}</h3>
+        <span class="hint" style="margin:0;">${formatThaiDate(ay.StartDate)} — ${formatThaiDate(ay.EndDate)} · นักเรียน ${studentIds.size} คน · อุปกรณ์ ${yearDevices.length} รายการ</span>
+      </div>
+      <div style="font-size:12px; font-weight:700; color:#6b6690; margin-bottom:6px;">อุปกรณ์ที่มอบ (แยกตามประเภท)</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">${typeBadges}</div>
+      <div style="font-size:12px; font-weight:700; color:#6b6690; margin-bottom:6px;">หน่วยงานที่มอบ</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">${providerBadges}</div>
+      <div style="font-size:12px; font-weight:700; color:#6b6690; margin-bottom:6px;">แยกตามห้องเตรียมความพร้อม</div>
+      ${roomTable}
+    </div>`;
+  }).join('');
 }
 
 function drawChart(canvasId, type, labels, data, horizontal) {
